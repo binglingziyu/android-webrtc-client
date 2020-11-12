@@ -1,24 +1,26 @@
-package com.ihubin.webrtc
+package com.ihubin.webrtc.page
 
 import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import com.ihubin.webrtc.R
 import io.socket.client.IO
-import io.socket.client.Manager
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
-import org.json.JSONException
-import org.json.JSONObject
 import org.webrtc.PeerConnectionFactory
 import java.net.URISyntaxException
 
 
 class MainActivity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        title = "Android WebRTC"
         setContentView(R.layout.activity_main)
 
         ActivityCompat.requestPermissions(
@@ -44,27 +46,44 @@ class MainActivity : AppCompatActivity() {
             //throw RuntimeException(e)
             return
         }
-        mSocket.on(Manager.EVENT_OPEN, onOpen)
-        mSocket.on(Manager.EVENT_CLOSE, onClose)
-        mSocket.on(Manager.EVENT_CONNECT_ERROR, onConnectError)
-        mSocket.on(Manager.EVENT_ERROR, onError)
+        mSocket.on(Socket.EVENT_CONNECT, onConnect)
+        mSocket.on(Socket.EVENT_DISCONNECT, onDisConnect)
+        mSocket.on(Socket.EVENT_CONNECT_ERROR, onConnectError)
+        mSocket.on(Socket.EVENT_ERROR, onError)
         mSocket.open()
     }
 
-    private val onOpen = Emitter.Listener { args ->
-        Log.d("MainActivity", "连接打开了")
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        super.onCreateOptionsMenu(menu)
+        val inflater = menuInflater
+        inflater.inflate(R.menu.menu_main, menu)
+        return true
     }
 
-    private val onClose = Emitter.Listener { args ->
-        Log.d("MainActivity", "连接关闭了")
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.setting -> {            // do something
+                startActivity(Intent(this, SettingActivity::class.java))
+                true
+            }
+            else -> super.onContextItemSelected(item)
+        }
+    }
+
+    private val onConnect = Emitter.Listener { args ->
+        Log.d("MainActivity", "连接建立了")
+    }
+
+    private val onDisConnect = Emitter.Listener { args ->
+        Log.d("MainActivity", "连接断开了")
     }
 
     private val onConnectError = Emitter.Listener { args ->
-        Log.d("MainActivity", "连接出错1" + args[0])
+        Log.d("MainActivity", "连接出错：" + args[0])
     }
 
     private val onError = Emitter.Listener { args ->
-        Log.d("MainActivity", "出错" + args[0])
+        Log.d("MainActivity", "出错：" + args[0])
     }
 
     fun createPeerConnectionFactory(): PeerConnectionFactory? {

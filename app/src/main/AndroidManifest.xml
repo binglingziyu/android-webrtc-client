@@ -14,6 +14,7 @@
         android:required="true" />
 
     <application
+        android:name=".MainApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -22,13 +23,30 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/Theme.Androidwebrtcclient"
         tools:targetApi="n">
-        <activity android:name=".MainActivity">
+
+        <activity
+            android:name=".page.LauncherActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+
+        <activity
+            android:name=".page.LoginActivity"
+            android:screenOrientation="portrait"/>
+
+        <activity
+            android:name=".page.MainActivity"
+            android:screenOrientation="portrait"/>
+
+        <activity
+            android:name=".page.SettingActivity"
+            android:screenOrientation="portrait"/>
+
     </application>
 
 </manifest>
