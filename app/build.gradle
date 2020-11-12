@@ -20,7 +20,7 @@ android {
         debug {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
-            storeFile file('../app-debug.keystore')
+            storeFile file('app-debug.keystore')
             storePassword 'android'
         }
     }
@@ -50,6 +50,10 @@ dependencies {
 
 
     implementation 'org.webrtc:google-webrtc:1.0.32006'
+    implementation ('io.socket:socket.io-client:1.0.0') {
+        // excluding org.json which is provided by Android
+        exclude group: 'org.json', module: 'json'
+    }
 
     testImplementation 'junit:junit:4.13.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
