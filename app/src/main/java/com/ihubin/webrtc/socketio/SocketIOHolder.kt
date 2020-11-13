@@ -30,7 +30,14 @@ class SocketIOHolder private constructor() {
             mSocket?.on(Socket.EVENT_CONNECT_ERROR, onConnectError)
             mSocket?.on(Socket.EVENT_ERROR, onError)
             mSocket?.open()
+        }
 
+        fun disconnect() {
+            mSocket?.off(Socket.EVENT_CONNECT, onConnect)
+            mSocket?.off(Socket.EVENT_DISCONNECT, onDisConnect)
+            mSocket?.off(Socket.EVENT_CONNECT_ERROR, onConnectError)
+            mSocket?.off(Socket.EVENT_ERROR, onError)
+            mSocket?.close()
         }
 
         fun on(event: String?, fn: Emitter.Listener?): Companion {
@@ -61,9 +68,12 @@ class SocketIOHolder private constructor() {
             return SocketIOHolder
         }
 
+        fun send(content: String) {
+            mSocket?.send(content)
+        }
 
-        fun send(vararg args: Any?) {
-            mSocket?.send(args)
+        fun emit(event: String, content: String) {
+            mSocket?.emit(event, content)
         }
 
         private val onConnect = Emitter.Listener { args ->

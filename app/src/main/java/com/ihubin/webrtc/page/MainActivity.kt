@@ -55,6 +55,11 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        SocketIOHolder.disconnect()
+    }
+
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         super.onCreateOptionsMenu(menu)
         val inflater = menuInflater
@@ -79,6 +84,7 @@ class MainActivity : AppCompatActivity() {
         runOnUiThread {
             console?.text?.appendLine("✅与信令服务建立连接了-$userName")
         }
+        SocketIOHolder.emit("text", "Hello Server!")
     }
 
     private val onDisConnect = Emitter.Listener { args ->
