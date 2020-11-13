@@ -10,14 +10,22 @@ class LauncherActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide()
         setContentView(R.layout.activity_launcher)
 
-        if(SPUtils.contains(this, "login")) {
-            startActivity(Intent(this, MainActivity::class.java))
-        } else {
-            startActivity(Intent(this, LoginActivity::class.java))
+        val thread = Thread {
+            Thread.sleep(1500)
+            runOnUiThread {
+                if (SPUtils.contains(this, "login")) {
+                    startActivity(Intent(this, MainActivity::class.java))
+                } else {
+                    startActivity(Intent(this, LoginActivity::class.java))
+                }
+                finish()
+            }
         }
-        finish()
+        thread.start()
+
     }
 
 

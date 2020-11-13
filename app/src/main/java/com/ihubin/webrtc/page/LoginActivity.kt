@@ -7,6 +7,7 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ihubin.webrtc.R
+import com.ihubin.webrtc.util.SPUtils
 
 class LoginActivity : AppCompatActivity() {
 
@@ -26,6 +27,10 @@ class LoginActivity : AppCompatActivity() {
             Toast.makeText(this, "填写用户名", Toast.LENGTH_SHORT).show()
             return
         }
+
+
+        SPUtils.put(this, "login", nameInput?.text)
+
         startActivity(Intent(this, MainActivity::class.java))
         finish()
     }

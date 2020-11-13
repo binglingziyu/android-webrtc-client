@@ -9,11 +9,14 @@ import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.ihubin.webrtc.R
+import com.ihubin.webrtc.socketio.SocketIOHolder
+import com.ihubin.webrtc.util.SPUtils
 import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
 import org.webrtc.PeerConnectionFactory
 import java.net.URISyntaxException
+import java.util.concurrent.ConcurrentLinkedQueue
 
 
 class MainActivity : AppCompatActivity() {
@@ -30,6 +33,16 @@ class MainActivity : AppCompatActivity() {
             ), 0X01
         )
 
+        // 连接信令服务器
+        SocketIOHolder
+                .on(Socket.EVENT_CONNECT, onConnect)
+                .on(Socket.EVENT_DISCONNECT, onDisConnect)
+                .on(Socket.EVENT_CONNECT_ERROR, onConnectError)
+                .on(Socket.EVENT_ERROR, onError)
+                .connect(SPUtils.get(this, "login", "") as String)
+
+
+
         PeerConnectionFactory.initialize(
             PeerConnectionFactory
                 .InitializationOptions
@@ -37,20 +50,6 @@ class MainActivity : AppCompatActivity() {
                 .createInitializationOptions()
         )
 
-        val mSocket: Socket = try {
-            val options: IO.Options = IO.Options()
-            options.query = "loginUserNum=88"
-            IO.socket("http://192.168.3.76:19090/", options)
-//            IO.socket("https://socketio-chat-h9jt.herokuapp.com/", options)
-        } catch (e: URISyntaxException) {
-            //throw RuntimeException(e)
-            return
-        }
-        mSocket.on(Socket.EVENT_CONNECT, onConnect)
-        mSocket.on(Socket.EVENT_DISCONNECT, onDisConnect)
-        mSocket.on(Socket.EVENT_CONNECT_ERROR, onConnectError)
-        mSocket.on(Socket.EVENT_ERROR, onError)
-        mSocket.open()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -70,28 +69,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
     private val onConnect = Emitter.Listener { args ->
         Log.d("MainActivity", "连接建立了")
     }
 
     private val onDisConnect = Emitter.Listener { args ->
         Log.d("MainActivity", "连接断开了")
+
     }
 
     private val onConnectError = Emitter.Listener { args ->
         Log.d("MainActivity", "连接出错：" + args[0])
+
     }
 
     private val onError = Emitter.Listener { args ->
         Log.d("MainActivity", "出错：" + args[0])
+
     }
 
-    fun createPeerConnectionFactory(): PeerConnectionFactory? {
-        val builder = PeerConnectionFactory.builder()
-//            .setVideoEncoderFactory(encoderFactory)
-//            .setVideoDecoderFactory(decoderFactory)
-
-        return builder.createPeerConnectionFactory()
-    }
 
 }
