@@ -1,9 +1,9 @@
 package com.ihubin.webrtc.socketio
 
-import android.util.Log
 import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
+import io.socket.thread.EventThread
 import java.net.URISyntaxException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -61,9 +61,10 @@ class SocketIOHolder private constructor() {
             return SocketIOHolder
         }
 
-//        fun send(args) {
-//            mSocket?.send(args)
-//        }
+
+        fun send(vararg args: Any?) {
+            mSocket?.send(args)
+        }
 
         private val onConnect = Emitter.Listener { args ->
             val cbs: ConcurrentLinkedQueue<Emitter.Listener>? = callbacks[Socket.EVENT_CONNECT]

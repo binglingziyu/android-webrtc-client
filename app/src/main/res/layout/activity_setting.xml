@@ -7,6 +7,18 @@
     tools:context=".page.SettingActivity">
 
     <Button
+        android:id="@+id/shared_preferences"
+        android:onClick="sharedPreferences"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp"
+        android:layout_marginHorizontal="25dp"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        android:text="SharedPreferences"/>
+
+    <Button
         android:id="@+id/logout"
         android:onClick="logout"
         android:layout_width="match_parent"
@@ -14,7 +26,7 @@
         android:padding="12dp"
         android:layout_marginHorizontal="25dp"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/shared_preferences"
         app:layout_constraintRight_toRightOf="parent"
         android:text="退出登录"/>
 

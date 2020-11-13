@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.ihubin.webrtc.R
@@ -21,10 +22,14 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 class MainActivity : AppCompatActivity() {
 
+    var console: EditText? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         title = "Android WebRTC"
         setContentView(R.layout.activity_main)
+
+        console = findViewById(R.id.console)
 
         ActivityCompat.requestPermissions(
             this, arrayOf(
@@ -40,8 +45,6 @@ class MainActivity : AppCompatActivity() {
                 .on(Socket.EVENT_CONNECT_ERROR, onConnectError)
                 .on(Socket.EVENT_ERROR, onError)
                 .connect(SPUtils.get(this, "login", "") as String)
-
-
 
         PeerConnectionFactory.initialize(
             PeerConnectionFactory
@@ -72,21 +75,31 @@ class MainActivity : AppCompatActivity() {
 
     private val onConnect = Emitter.Listener { args ->
         Log.d("MainActivity", "连接建立了")
+        val userName = SPUtils.get(this, "login", "")
+        runOnUiThread {
+            console?.text?.appendLine("✅与信令服务建立连接了-$userName")
+        }
     }
 
     private val onDisConnect = Emitter.Listener { args ->
         Log.d("MainActivity", "连接断开了")
-
+        runOnUiThread {
+            console?.text?.appendLine("🚫与信令服务断开连接了")
+        }
     }
 
     private val onConnectError = Emitter.Listener { args ->
         Log.d("MainActivity", "连接出错：" + args[0])
-
+        runOnUiThread {
+            console?.text?.appendLine("❌与信令服务连接出错了")
+        }
     }
 
     private val onError = Emitter.Listener { args ->
         Log.d("MainActivity", "出错：" + args[0])
-
+        runOnUiThread {
+            console?.text?.appendLine("❌连接出错了")
+        }
     }
 
 

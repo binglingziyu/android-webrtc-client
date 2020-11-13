@@ -6,6 +6,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.ihubin.webrtc.R
 import com.ihubin.webrtc.util.SPUtils
+import com.sloydev.preferator.Preferator
 
 class SettingActivity : AppCompatActivity() {
 
@@ -13,6 +14,10 @@ class SettingActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         title = "设置"
         setContentView(R.layout.activity_setting)
+    }
+
+    fun sharedPreferences(view: View) {
+        Preferator.launch(this)
     }
 
     fun logout(view: View) {
