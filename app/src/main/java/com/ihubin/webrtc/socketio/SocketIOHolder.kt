@@ -1,9 +1,10 @@
 package com.ihubin.webrtc.socketio
 
+import com.ihubin.webrtc.Contants
 import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
-import io.socket.thread.EventThread
+import org.json.JSONObject
 import java.net.URISyntaxException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -21,22 +22,27 @@ class SocketIOHolder private constructor() {
             mSocket = try {
                 val options: IO.Options = IO.Options()
                 options.query = "loginUserName=$userName"
-                IO.socket("http://192.168.3.76:19090/", options)
+                IO.socket(Contants.SIGNAL_SERVER, options)
             } catch (e: URISyntaxException) {
                 null
             }
-            mSocket?.on(Socket.EVENT_CONNECT, onConnect)
-            mSocket?.on(Socket.EVENT_DISCONNECT, onDisConnect)
-            mSocket?.on(Socket.EVENT_CONNECT_ERROR, onConnectError)
-            mSocket?.on(Socket.EVENT_ERROR, onError)
+            for (event in callbacks.keys) {
+                mSocket?.on(event) { args ->
+                    val cbs: ConcurrentLinkedQueue<Emitter.Listener>? = callbacks[event]
+                    if (cbs != null) {
+                        for (item in cbs) {
+                            item.call(*args)
+                        }
+                    }
+                }
+            }
             mSocket?.open()
         }
 
         fun disconnect() {
-            mSocket?.off(Socket.EVENT_CONNECT, onConnect)
-            mSocket?.off(Socket.EVENT_DISCONNECT, onDisConnect)
-            mSocket?.off(Socket.EVENT_CONNECT_ERROR, onConnectError)
-            mSocket?.off(Socket.EVENT_ERROR, onError)
+            for (event in callbacks.keys) {
+                mSocket?.off(event)
+            }
             mSocket?.close()
         }
 
@@ -72,44 +78,8 @@ class SocketIOHolder private constructor() {
             mSocket?.send(content)
         }
 
-        fun emit(event: String, content: String) {
+        fun emit(event: String, content: JSONObject) {
             mSocket?.emit(event, content)
-        }
-
-        private val onConnect = Emitter.Listener { args ->
-            val cbs: ConcurrentLinkedQueue<Emitter.Listener>? = callbacks[Socket.EVENT_CONNECT]
-            if (cbs != null) {
-                for (item in cbs) {
-                    item.call(args)
-                }
-            }
-        }
-
-        private val onDisConnect = Emitter.Listener { args ->
-            val cbs: ConcurrentLinkedQueue<Emitter.Listener>? = callbacks[Socket.EVENT_DISCONNECT]
-            if (cbs != null) {
-                for (item in cbs) {
-                    item.call(args)
-                }
-            }
-        }
-
-        private val onConnectError = Emitter.Listener { args ->
-            val cbs: ConcurrentLinkedQueue<Emitter.Listener>? = callbacks[Socket.EVENT_CONNECT_ERROR]
-            if (cbs != null) {
-                for (item in cbs) {
-                    item.call(args)
-                }
-            }
-        }
-
-        private val onError = Emitter.Listener { args ->
-            val cbs: ConcurrentLinkedQueue<Emitter.Listener>? = callbacks[Socket.EVENT_ERROR]
-            if (cbs != null) {
-                for (item in cbs) {
-                    item.call(args)
-                }
-            }
         }
 
     }

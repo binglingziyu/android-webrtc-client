@@ -10,14 +10,13 @@ import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.ihubin.webrtc.R
+import com.ihubin.webrtc.model.SignalMessage
 import com.ihubin.webrtc.socketio.SocketIOHolder
 import com.ihubin.webrtc.util.SPUtils
-import io.socket.client.IO
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
+import org.json.JSONObject
 import org.webrtc.PeerConnectionFactory
-import java.net.URISyntaxException
-import java.util.concurrent.ConcurrentLinkedQueue
 
 
 class MainActivity : AppCompatActivity() {
@@ -44,6 +43,7 @@ class MainActivity : AppCompatActivity() {
                 .on(Socket.EVENT_DISCONNECT, onDisConnect)
                 .on(Socket.EVENT_CONNECT_ERROR, onConnectError)
                 .on(Socket.EVENT_ERROR, onError)
+                .on(Socket.EVENT_MESSAGE, onMessage)
                 .connect(SPUtils.get(this, "login", "") as String)
 
         PeerConnectionFactory.initialize(
@@ -84,7 +84,6 @@ class MainActivity : AppCompatActivity() {
         runOnUiThread {
             console?.text?.appendLine("✅与信令服务建立连接了-$userName")
         }
-        SocketIOHolder.emit("text", "Hello Server!")
     }
 
     private val onDisConnect = Emitter.Listener { args ->
@@ -108,5 +107,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private val onMessage = Emitter.Listener { args ->
+        runOnUiThread {
+            console?.text?.appendLine("❤️收到消息: " + args[0] )
+        }
+    }
 
 }
