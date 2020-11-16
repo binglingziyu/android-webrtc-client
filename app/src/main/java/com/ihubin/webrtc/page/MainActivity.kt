@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -14,17 +16,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.ihubin.webrtc.R
 import com.ihubin.webrtc.adapter.OnlineUserAdapter
-import com.ihubin.webrtc.model.CommandMessage
 import com.ihubin.webrtc.socketio.SocketIOHolder
 import com.ihubin.webrtc.util.SPUtils
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.Types
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
 import org.json.JSONArray
-import org.webrtc.PeerConnectionFactory
-import java.lang.reflect.Type
+import org.json.JSONObject
 
 class MainActivity : AppCompatActivity() {
 
@@ -36,6 +33,8 @@ class MainActivity : AppCompatActivity() {
     var contactUser: TextView? = null
     var console: EditText? = null
     var rvOnlineUser: RecyclerView? = null
+    var startWebrtc: Button? = null
+
     var onlineUserList: ArrayList<String>? = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,14 +51,6 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.RECORD_AUDIO
             ), 0X01
         )
-
-        PeerConnectionFactory.initialize(
-            PeerConnectionFactory
-                .InitializationOptions
-                .builder(this)
-                .createInitializationOptions()
-        )
-
     }
 
     override fun onDestroy() {
@@ -94,10 +85,23 @@ class MainActivity : AppCompatActivity() {
                 contactUserName = it.tag as String
                 contactUser?.text = "当前通信用户：$contactUserName"
 
-                val commandMessage = CommandMessage("userContact", payload = contactUserName!!)
+                SPUtils.put(this, "contactTo", contactUserName)
 
-                SocketIOHolder.emit("command", commandMessage)
+                startWebrtc?.visibility = View.VISIBLE
+
+                val message = JSONObject()
+                message.put("type", "userContact")
+                message.put("payload", contactUserName)
+                SocketIOHolder.emit("command", message)
             }
+        }
+        startWebrtc = findViewById(R.id.start_webrtc)
+        startWebrtc?.setOnClickListener {
+            val message = JSONObject()
+            message.put("type", "call")
+            message.put("payload", contactUserName)
+            SocketIOHolder.emit("command", message)
+            startActivity(Intent(this, WebRtcActivity::class.java))
         }
     }
 
@@ -111,6 +115,7 @@ class MainActivity : AppCompatActivity() {
             .on(Socket.EVENT_MESSAGE, onMessage)
             .on("userList", onUserList)
             .on("userContact", onUserContact)
+            .on("call", onCall)
             .connect(SPUtils.get(this, "login", "") as String)
     }
 
@@ -154,20 +159,11 @@ class MainActivity : AppCompatActivity() {
         runOnUiThread {
             console?.text?.appendLine("❤️收到用户列表: " + args[0])
 
-            val moshi = Moshi.Builder()
-                .addLast(KotlinJsonAdapterFactory())
-                .build()
-
             val userListJSONArray: JSONArray = args[0] as JSONArray
-            val listOfStringType: Type = Types.newParameterizedType(
-                List::class.java,
-                String::class.java
-            )
-            val jsonAdapter= moshi.adapter<ArrayList<String>>(listOfStringType)
-            val userList: ArrayList<String>? = jsonAdapter.fromJson(userListJSONArray.toString())
-
             onlineUserList?.clear()
-            onlineUserList?.addAll(userList!!)
+            for (i in 0 until userListJSONArray.length()) {
+                onlineUserList?.add(userListJSONArray[i] as String)
+            }
             rvOnlineUser?.adapter?.notifyDataSetChanged()
 
         }
@@ -178,7 +174,18 @@ class MainActivity : AppCompatActivity() {
             contactUserName = args[0] as String
             contactUser?.text = "当前通信用户：$contactUserName"
 
+            SPUtils.put(this, "contactTo", contactUserName)
+
+            startWebrtc?.visibility = View.VISIBLE
+
             console?.text?.appendLine("❤️收到通信请求: " + args[0])
+        }
+    }
+
+    private val onCall = Emitter.Listener { args ->
+        runOnUiThread {
+            console?.text?.appendLine("☎️️收到电话请求: " + args[0])
+            startActivity(Intent(this, WebRtcActivity::class.java))
         }
     }
 

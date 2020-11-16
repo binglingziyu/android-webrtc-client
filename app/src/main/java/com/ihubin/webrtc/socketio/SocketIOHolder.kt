@@ -1,9 +1,6 @@
 package com.ihubin.webrtc.socketio
 
 import com.ihubin.webrtc.Contants
-import com.ihubin.webrtc.model.BaseMessage
-import com.ihubin.webrtc.model.CommandMessage
-import com.ihubin.webrtc.model.SignalMessage
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -62,6 +59,17 @@ class SocketIOHolder private constructor() {
                 }
             }
             cbs.add(fn)
+
+            if(mSocket != null) {
+                mSocket?.on(event) { args ->
+                    val cbs2: ConcurrentLinkedQueue<Emitter.Listener>? = callbacks[event]
+                    if (cbs2 != null) {
+                        for (item in cbs2) {
+                            item.call(*args)
+                        }
+                    }
+                }
+            }
             return SocketIOHolder
         }
 
@@ -80,23 +88,23 @@ class SocketIOHolder private constructor() {
             return SocketIOHolder
         }
 
-        fun send(message: BaseMessage) {
+        fun send(message: JSONObject) {
             emit(Socket.EVENT_MESSAGE, message)
         }
 
-        fun emit(event: String, message: BaseMessage) {
-            val moshi = Moshi.Builder()
-                .addLast(KotlinJsonAdapterFactory())
-                .build()
-            var content: String = ""
-            if(message is CommandMessage) {
-                val jsonAdapter: JsonAdapter<CommandMessage> = moshi.adapter(CommandMessage::class.java)
-                content = jsonAdapter.toJson(message)
-            } else if(message is SignalMessage) {
-                val jsonAdapter: JsonAdapter<SignalMessage> = moshi.adapter(SignalMessage::class.java)
-                content = jsonAdapter.toJson(message)
-            }
-            mSocket?.emit(event, JSONObject(content))
+        fun emit(event: String, message: JSONObject) {
+//            val moshi = Moshi.Builder()
+//                .addLast(KotlinJsonAdapterFactory())
+//                .build()
+//            var content: String = ""
+//            if(message is CommandMessage) {
+//                val jsonAdapter: JsonAdapter<CommandMessage> = moshi.adapter(CommandMessage::class.java)
+//                content = jsonAdapter.toJson(message)
+//            } else if(message is SignalMessage) {
+//                val jsonAdapter: JsonAdapter<SignalMessage> = moshi.adapter(SignalMessage::class.java)
+//                content = jsonAdapter.toJson(message)
+//            }
+            mSocket?.emit(event, message)
         }
 
     }
