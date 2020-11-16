@@ -317,6 +317,7 @@ class WebRtcActivity : AppCompatActivity() {
 
         val iceServers = ArrayList<IceServer>()
         iceServers.add(IceServer("stun:49.232.162.58:3478"))
+        iceServers.add(IceServer("turn:49.232.162.58:3478", "aaaaa", "bbbbb"))
         val rtcConfig = RTCConfiguration(iceServers)
         // TCP candidates are only useful when connecting to a server that supports
         // ICE-TCP.
