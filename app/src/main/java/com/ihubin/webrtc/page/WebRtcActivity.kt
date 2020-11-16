@@ -2,7 +2,6 @@ package com.ihubin.webrtc.page
 
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.ihubin.webrtc.R
@@ -15,6 +14,7 @@ import org.webrtc.*
 import org.webrtc.PeerConnection.*
 import org.webrtc.PeerConnection.Observer
 import java.util.*
+
 
 class WebRtcActivity : AppCompatActivity() {
 
@@ -184,6 +184,7 @@ class WebRtcActivity : AppCompatActivity() {
         surfaceView?.init(rootEglBase?.eglBaseContext, null)
         surfaceView?.setEnableHardwareScaler(true)
         surfaceView?.setMirror(true)
+
         surfaceView2?.init(rootEglBase?.eglBaseContext, null)
         surfaceView2?.setEnableHardwareScaler(true)
         surfaceView2?.setMirror(true)
@@ -268,11 +269,11 @@ class WebRtcActivity : AppCompatActivity() {
 
             override fun onAddStream(mediaStream: MediaStream) {
                 Log.d(TAG, "onAddStream: " + mediaStream.videoTracks.size)
-                val remoteVideoTrack = mediaStream.videoTracks[0]
-                val remoteAudioTrack = mediaStream.audioTracks[0]
-                remoteAudioTrack.setEnabled(true)
-                remoteVideoTrack.setEnabled(true)
-                remoteVideoTrack.addSink(surfaceView2)
+//                val remoteVideoTrack = mediaStream.videoTracks[0]
+//                val remoteAudioTrack = mediaStream.audioTracks[0]
+//                remoteAudioTrack.setEnabled(true)
+//                remoteVideoTrack.setEnabled(true)
+//                remoteVideoTrack.addSink(surfaceView2)
             }
 
             override fun onRemoveStream(mediaStream: MediaStream) {
@@ -287,8 +288,30 @@ class WebRtcActivity : AppCompatActivity() {
                 Log.d(TAG, "onRenegotiationNeeded: ")
             }
 
-            override fun onAddTrack(p0: RtpReceiver?, p1: Array<out MediaStream>?) {
+            override fun onAddTrack(receiver: RtpReceiver?, mediaStreams: Array<out MediaStream>?) {
+                if(receiver?.track() == null) {
+                    return
+                }
+                if(receiver.track() is VideoTrack) {
+                    val remoteVideoTrack: VideoTrack = receiver.track() as VideoTrack
+                    remoteVideoTrack.setEnabled(true)
+                    remoteVideoTrack.addSink(surfaceView2)
+                } else if(receiver.track() is AudioTrack) {
+                    val remoteAudioTrack = receiver.track() as AudioTrack
+                    remoteAudioTrack.setEnabled(true)
+                }
 
+//                if(mediaStreams == null || mediaStreams.isEmpty()) {
+//                    return
+//                }
+//                if (mediaStreams[0].videoTracks.size >= 1) {
+//                    // Assuming there is only one video track.
+//                    val remoteVideoTrack: VideoTrack = mediaStreams[0].videoTracks[0]
+//                    remoteVideoTrack.setEnabled(true)
+//                    remoteVideoTrack.addSink(surfaceView2)
+//                    val remoteAudioTrack = mediaStreams[0].audioTracks[0]
+//                    remoteAudioTrack.setEnabled(true)
+//                }
             }
         }
 
@@ -328,8 +351,8 @@ class WebRtcActivity : AppCompatActivity() {
 //        mediaStream.addTrack(videoTrack)
 //        mediaStream.addTrack(audioTrack)
 
-        peerConnection!!.addTrack(audioTrack)
         peerConnection!!.addTrack(videoTrack)
+        peerConnection!!.addTrack(audioTrack)
 //        peerConnection!!.addStream(mediaStream)
 //        sendMessage("got user media")
     }

@@ -150,6 +150,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val onMessage = Emitter.Listener { args ->
+        Log.d(TAG, "收到消息：" + args[0])
         runOnUiThread {
             console?.text?.appendLine("❤️收到消息: " + args[0])
         }
