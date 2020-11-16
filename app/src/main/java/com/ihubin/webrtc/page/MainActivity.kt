@@ -85,7 +85,7 @@ class MainActivity : AppCompatActivity() {
                 contactUserName = it.tag as String
                 contactUser?.text = "当前通信用户：$contactUserName"
 
-                SPUtils.put(this, "contactTo", contactUserName)
+                SPUtils.put(this, "contactTo", contactUserName!!)
 
                 startWebrtc?.visibility = View.VISIBLE
 
@@ -175,7 +175,7 @@ class MainActivity : AppCompatActivity() {
             contactUserName = args[0] as String
             contactUser?.text = "当前通信用户：$contactUserName"
 
-            SPUtils.put(this, "contactTo", contactUserName)
+            SPUtils.put(this, "contactTo", contactUserName!!)
 
             startWebrtc?.visibility = View.VISIBLE
 

@@ -29,7 +29,7 @@ class LoginActivity : AppCompatActivity() {
         }
 
 
-        SPUtils.put(this, "login", nameInput?.text)
+        SPUtils.put(this, "login", nameInput?.text!!)
 
         startActivity(Intent(this, MainActivity::class.java))
         finish()
