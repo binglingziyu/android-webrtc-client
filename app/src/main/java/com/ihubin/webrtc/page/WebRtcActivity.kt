@@ -3,6 +3,7 @@ package com.ihubin.webrtc.page
 import android.os.Bundle
 import android.util.Log
 import android.widget.Button
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ihubin.webrtc.R
 import com.ihubin.webrtc.socketio.SocketIOHolder
@@ -11,8 +12,10 @@ import io.socket.client.Socket
 import org.json.JSONException
 import org.json.JSONObject
 import org.webrtc.*
+import org.webrtc.MediaConstraints.KeyValuePair
 import org.webrtc.PeerConnection.*
 import org.webrtc.PeerConnection.Observer
+import java.nio.ByteBuffer
 import java.util.*
 
 
@@ -28,6 +31,7 @@ class WebRtcActivity : AppCompatActivity() {
     private var rootEglBase: EglBase? = null
     private var factory: PeerConnectionFactory? = null
     private var peerConnection: PeerConnection? = null
+    private var dataChannel: DataChannel? = null
     private var videoSource: VideoSource? = null
     private var audioSource: AudioSource? = null
 
@@ -53,6 +57,39 @@ class WebRtcActivity : AppCompatActivity() {
         findViewById<Button>(R.id.start_call).setOnClickListener {
             doCall()
         }
+        findViewById<Button>(R.id.start_channel).setOnClickListener {
+            if(dataChannel == null) {
+                val init = DataChannel.Init();
+                init.ordered = true
+                init.negotiated = false
+                dataChannel = peerConnection?.createDataChannel("dataChannel", init)
+                dataChannel?.registerObserver(object : DataChannel.Observer {
+                    override fun onBufferedAmountChange(p0: Long) {}
+
+                    override fun onStateChange() {}
+
+                    override fun onMessage(buffer: DataChannel.Buffer?) {
+                        Log.d(TAG, "********** 接收到消息 ***********")
+                        val data = buffer!!.data
+                        val bytes = ByteArray(data.capacity())
+                        val strData = String(bytes)
+                        Toast.makeText(this@WebRtcActivity, strData, Toast.LENGTH_SHORT).show()
+                    }
+                })
+
+            } else {
+                sendDataChannelMessage("地瓜地瓜，我是土豆！", dataChannel!!)
+            }
+        }
+    }
+
+    fun sendDataChannelMessage(message: String, dataChannel: DataChannel) {
+        val msg = message.toByteArray()
+        val buffer = DataChannel.Buffer(
+                ByteBuffer.wrap(msg), false)
+        val sendResult = dataChannel.send(buffer)
+
+        Toast.makeText(this@WebRtcActivity, "发送结果：$sendResult", Toast.LENGTH_SHORT).show()
     }
 
     private fun start() {
@@ -78,31 +115,31 @@ class WebRtcActivity : AppCompatActivity() {
                     Log.d(TAG, "connectToSignallingServer: received an offer")
 
                     peerConnection!!.setRemoteDescription(
-                        object : SdpObserver {
-                            override fun onCreateSuccess(p0: SessionDescription?) {}
-                            override fun onSetSuccess() {}
-                            override fun onCreateFailure(p0: String?) {}
-                            override fun onSetFailure(p0: String?) {}
-                        },
-                        SessionDescription(SessionDescription.Type.OFFER, message.getString("sdp"))
+                            object : SdpObserver {
+                                override fun onCreateSuccess(p0: SessionDescription?) {}
+                                override fun onSetSuccess() {}
+                                override fun onCreateFailure(p0: String?) {}
+                                override fun onSetFailure(p0: String?) {}
+                            },
+                            SessionDescription(SessionDescription.Type.OFFER, message.getString("sdp"))
                     )
                     doAnswer()
                 } else if (message.getString("type") == "answer") {
                     peerConnection!!.setRemoteDescription(
-                        object : SdpObserver {
-                            override fun onCreateSuccess(p0: SessionDescription?) {}
-                            override fun onSetSuccess() {}
-                            override fun onCreateFailure(p0: String?) {}
-                            override fun onSetFailure(p0: String?) {}
-                        },
-                        SessionDescription(SessionDescription.Type.ANSWER, message.getString("sdp"))
+                            object : SdpObserver {
+                                override fun onCreateSuccess(p0: SessionDescription?) {}
+                                override fun onSetSuccess() {}
+                                override fun onCreateFailure(p0: String?) {}
+                                override fun onSetFailure(p0: String?) {}
+                            },
+                            SessionDescription(SessionDescription.Type.ANSWER, message.getString("sdp"))
                     )
                 } else if (message.getString("type") == "candidate") {
                     Log.d(TAG, "connectToSignallingServer: receiving candidates")
                     val candidate = IceCandidate(
-                        message.getString("id"),
-                        message.getInt("label"),
-                        message.getString("candidate")
+                            message.getString("id"),
+                            message.getInt("label"),
+                            message.getString("candidate")
                     )
                     peerConnection!!.addIceCandidate(candidate)
                 }
@@ -113,21 +150,24 @@ class WebRtcActivity : AppCompatActivity() {
     private fun doCall() {
         val sdpMediaConstraints = MediaConstraints()
         sdpMediaConstraints.mandatory.add(
-            MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true")
+                KeyValuePair("OfferToReceiveAudio", "true")
         )
         sdpMediaConstraints.mandatory.add(
-            MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true")
+                KeyValuePair("OfferToReceiveVideo", "true")
         )
+
+        sdpMediaConstraints.optional.add(KeyValuePair("DtlsSrtpKeyAgreement", "true"))
+        sdpMediaConstraints.optional.add(KeyValuePair("internalSctpDataChannels", "true"))
         peerConnection!!.createOffer(object : SdpObserver {
             override fun onCreateSuccess(sessionDescription: SessionDescription?) {
                 Log.d(TAG, "onCreateSuccess: ")
                 peerConnection!!.setLocalDescription(
-                    object : SdpObserver {
-                        override fun onCreateSuccess(p0: SessionDescription?) {}
-                        override fun onSetSuccess() {}
-                        override fun onCreateFailure(p0: String?) {}
-                        override fun onSetFailure(p0: String?) {}
-                    }, sessionDescription
+                        object : SdpObserver {
+                            override fun onCreateSuccess(p0: SessionDescription?) {}
+                            override fun onSetSuccess() {}
+                            override fun onCreateFailure(p0: String?) {}
+                            override fun onSetFailure(p0: String?) {}
+                        }, sessionDescription
                 )
                 val message = JSONObject()
                 try {
@@ -147,29 +187,39 @@ class WebRtcActivity : AppCompatActivity() {
 
     //MirtDPM4
     private fun doAnswer() {
-        peerConnection!!.createAnswer(
-            object : SdpObserver {
-                override fun onCreateSuccess(sessionDescription: SessionDescription?) {
-                    peerConnection!!.setLocalDescription(object : SdpObserver {
-                        override fun onCreateSuccess(p0: SessionDescription?) {}
-                        override fun onSetSuccess() {}
-                        override fun onCreateFailure(p0: String?) {}
-                        override fun onSetFailure(p0: String?) {}
-                    }, sessionDescription)
-                    val message = JSONObject()
-                    try {
-                        message.put("type", "answer")
-                        message.put("sdp", sessionDescription!!.description)
-                        sendMessage(message)
-                    } catch (e: JSONException) {
-                        e.printStackTrace()
-                    }
-                }
+        val sdpMediaConstraints = MediaConstraints()
+        sdpMediaConstraints.mandatory.add(
+                KeyValuePair("OfferToReceiveAudio", "true")
+        )
+        sdpMediaConstraints.mandatory.add(
+                KeyValuePair("OfferToReceiveVideo", "true")
+        )
 
-                override fun onSetSuccess() {}
-                override fun onCreateFailure(p0: String?) {}
-                override fun onSetFailure(p0: String?) {}
-            }, MediaConstraints()
+        sdpMediaConstraints.optional.add(KeyValuePair("DtlsSrtpKeyAgreement", "true"))
+        sdpMediaConstraints.optional.add(KeyValuePair("internalSctpDataChannels", "true"))
+        peerConnection!!.createAnswer(
+                object : SdpObserver {
+                    override fun onCreateSuccess(sessionDescription: SessionDescription?) {
+                        peerConnection!!.setLocalDescription(object : SdpObserver {
+                            override fun onCreateSuccess(p0: SessionDescription?) {}
+                            override fun onSetSuccess() {}
+                            override fun onCreateFailure(p0: String?) {}
+                            override fun onSetFailure(p0: String?) {}
+                        }, sessionDescription)
+                        val message = JSONObject()
+                        try {
+                            message.put("type", "answer")
+                            message.put("sdp", sessionDescription!!.description)
+                            sendMessage(message)
+                        } catch (e: JSONException) {
+                            e.printStackTrace()
+                        }
+                    }
+
+                    override fun onSetSuccess() {}
+                    override fun onCreateFailure(p0: String?) {}
+                    override fun onSetFailure(p0: String?) {}
+                }, sdpMediaConstraints
         )
     }
 
@@ -215,8 +265,8 @@ class WebRtcActivity : AppCompatActivity() {
         val videoCapture: VideoCapturer? = createVideoCapturer()
         // Create video source
         val surfaceTextureHelper = SurfaceTextureHelper.create(
-            "CaptureThread",
-            rootEglBase?.eglBaseContext
+                "CaptureThread",
+                rootEglBase?.eglBaseContext
         )
         videoSource = factory!!.createVideoSource(videoCapture!!.isScreencast)
         videoCapture.initialize(surfaceTextureHelper, this, videoSource!!.capturerObserver)
@@ -233,7 +283,7 @@ class WebRtcActivity : AppCompatActivity() {
     private fun createPeerConnection(factory: PeerConnectionFactory): PeerConnection? {
         val pcObserver: Observer =  object: Observer {
             override fun onSignalingChange(signalingState: SignalingState) {
-                Log.d(TAG, "onSignalingChange: ")
+                Log.d(TAG, "###################################### onSignalingChange: $signalingState")
             }
 
             override fun onIceConnectionChange(iceConnectionState: IceConnectionState) {
@@ -269,19 +319,28 @@ class WebRtcActivity : AppCompatActivity() {
 
             override fun onAddStream(mediaStream: MediaStream) {
                 Log.d(TAG, "onAddStream: " + mediaStream.videoTracks.size)
-//                val remoteVideoTrack = mediaStream.videoTracks[0]
-//                val remoteAudioTrack = mediaStream.audioTracks[0]
-//                remoteAudioTrack.setEnabled(true)
-//                remoteVideoTrack.setEnabled(true)
-//                remoteVideoTrack.addSink(surfaceView2)
             }
 
             override fun onRemoveStream(mediaStream: MediaStream) {
                 Log.d(TAG, "onRemoveStream: ")
             }
 
-            override fun onDataChannel(dataChannel: DataChannel) {
+            override fun onDataChannel(dc: DataChannel) {
                 Log.d(TAG, "onDataChannel: ")
+                dataChannel = dc
+                dataChannel?.registerObserver(object : DataChannel.Observer {
+                    override fun onBufferedAmountChange(p0: Long) {}
+
+                    override fun onStateChange() {}
+
+                    override fun onMessage(buffer: DataChannel.Buffer?) {
+                        Log.d(TAG, "********** 接收到消息 ***********")
+                        val data = buffer!!.data
+                        val bytes = ByteArray(data.capacity())
+                        val strData = String(bytes)
+                        Toast.makeText(this@WebRtcActivity, strData, Toast.LENGTH_SHORT).show()
+                    }
+                })
             }
 
             override fun onRenegotiationNeeded() {
@@ -300,24 +359,19 @@ class WebRtcActivity : AppCompatActivity() {
                     val remoteAudioTrack = receiver.track() as AudioTrack
                     remoteAudioTrack.setEnabled(true)
                 }
-
-//                if(mediaStreams == null || mediaStreams.isEmpty()) {
-//                    return
-//                }
-//                if (mediaStreams[0].videoTracks.size >= 1) {
-//                    // Assuming there is only one video track.
-//                    val remoteVideoTrack: VideoTrack = mediaStreams[0].videoTracks[0]
-//                    remoteVideoTrack.setEnabled(true)
-//                    remoteVideoTrack.addSink(surfaceView2)
-//                    val remoteAudioTrack = mediaStreams[0].audioTracks[0]
-//                    remoteAudioTrack.setEnabled(true)
-//                }
             }
         }
 
         val iceServers = ArrayList<IceServer>()
-        iceServers.add(IceServer("stun:49.232.162.58:3478"))
-        iceServers.add(IceServer("turn:49.232.162.58:3478", "aaaaa", "bbbbb"))
+        val stunPeerIceServer: IceServer = IceServer.builder("stun:49.232.162.58:3478").createIceServer()
+        iceServers.add(stunPeerIceServer)
+//        val turnPeerIceServer: IceServer = IceServer.builder("turn:49.232.162.58:3478")
+//                .setUsername("aaaaa").setPassword("bbbbb")
+//                .createIceServer()
+//        iceServers.add(turnPeerIceServer)
+
+//        iceServers.add(IceServer("stun:49.232.162.58:3478"))
+//        iceServers.add(IceServer("turn:49.232.162.58:3478", "aaaaa", "bbbbb"))
         val rtcConfig = RTCConfiguration(iceServers)
         // TCP candidates are only useful when connecting to a server that supports
         // ICE-TCP.
@@ -360,13 +414,11 @@ class WebRtcActivity : AppCompatActivity() {
 
 
     private fun createVideoCapturer(): VideoCapturer? {
-        val videoCapturer: VideoCapturer?
-        if (useCamera2()) {
-            videoCapturer = createCameraCapturer(Camera2Enumerator(this))
+        return if (useCamera2()) {
+            createCameraCapturer(Camera2Enumerator(this))
         } else {
-            videoCapturer = createCameraCapturer(Camera1Enumerator(true))
+            createCameraCapturer(Camera1Enumerator(true))
         }
-        return videoCapturer
     }
 
     private fun createCameraCapturer(enumerator: CameraEnumerator): VideoCapturer? {
