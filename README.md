@@ -1,3 +1,4 @@
+# WebRTC
 
 [WebRTC实现Android传屏demo](https://codezjx.com/posts/webrtc-android-demo/)
 
@@ -8,3 +9,11 @@
 [Maven Center android-webrtc](https://mvnrepository.com/artifact/org.webrtc/google-webrtc?repo=bt-google-webrtc)
 
 [flutter-webrtc](https://github.com/flutter-webrtc/flutter-webrtc)
+
+
+
+# WebRTC-DataChannel
+
+DataChannel 一次只能发 16KB
+
+[WebRTC data channel: Optimum message size](https://viblast.com/blog/2015/2/5/webrtc-data-channel-message-size/)
