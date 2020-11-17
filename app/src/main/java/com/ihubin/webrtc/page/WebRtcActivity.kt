@@ -34,6 +34,8 @@ class WebRtcActivity : AppCompatActivity() {
     private var factory: PeerConnectionFactory? = null
     private var peerConnection: PeerConnection? = null
     private var dataChannel: DataChannel? = null
+    private var surfaceTextureHelper: SurfaceTextureHelper? = null
+    private var videoCapture: VideoCapturer? = null
     private var videoSource: VideoSource? = null
     private var audioSource: AudioSource? = null
 
@@ -46,11 +48,37 @@ class WebRtcActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-//        peerConnection?.dispose()
-//        peerConnection?.close()
-//        videoSource?.dispose()
-//        audioSource?.dispose()
-//        rootEglBase?.release()
+
+        videoCapture?.stopCapture()
+        videoCapture?.dispose()
+        videoCapture = null
+        videoSource?.dispose()
+        videoSource = null
+        audioSource?.dispose()
+        audioSource = null
+
+        surfaceView?.release()
+        surfaceView = null
+        surfaceView2?.release()
+        surfaceView2 = null
+        rootEglBase?.releaseSurface()
+        rootEglBase?.release()
+        rootEglBase = null
+
+        surfaceTextureHelper?.dispose()
+        surfaceTextureHelper = null
+
+        dataChannel?.close()
+        dataChannel?.dispose()
+        dataChannel = null
+
+        peerConnection?.close()
+        peerConnection?.dispose()
+        peerConnection = null
+
+        factory?.dispose()
+        factory = null
+
     }
 
     private fun initView() {
@@ -160,14 +188,14 @@ class WebRtcActivity : AppCompatActivity() {
     private fun doCall() {
         started = true
         val sdpMediaConstraints = MediaConstraints()
-        sdpMediaConstraints.mandatory.add(
-                KeyValuePair("OfferToReceiveAudio", "true")
-        )
-        sdpMediaConstraints.mandatory.add(
-                KeyValuePair("OfferToReceiveVideo", "true")
-        )
+//        sdpMediaConstraints.mandatory.add(
+//                KeyValuePair("OfferToReceiveAudio", "true")
+//        )
+//        sdpMediaConstraints.mandatory.add(
+//                KeyValuePair("OfferToReceiveVideo", "true")
+//        )
 
-        sdpMediaConstraints.optional.add(KeyValuePair("DtlsSrtpKeyAgreement", "true"))
+//        sdpMediaConstraints.optional.add(KeyValuePair("DtlsSrtpKeyAgreement", "true"))
 //        sdpMediaConstraints.optional.add(KeyValuePair("internalSctpDataChannels", "true"))
         peerConnection?.createOffer(object : SdpObserver {
             override fun onCreateSuccess(sessionDescription: SessionDescription?) {
@@ -199,14 +227,14 @@ class WebRtcActivity : AppCompatActivity() {
     //MirtDPM4
     private fun doAnswer() {
         val sdpMediaConstraints = MediaConstraints()
-        sdpMediaConstraints.mandatory.add(
-                KeyValuePair("OfferToReceiveAudio", "true")
-        )
-        sdpMediaConstraints.mandatory.add(
-                KeyValuePair("OfferToReceiveVideo", "true")
-        )
+//        sdpMediaConstraints.mandatory.add(
+//                KeyValuePair("OfferToReceiveAudio", "true")
+//        )
+//        sdpMediaConstraints.mandatory.add(
+//                KeyValuePair("OfferToReceiveVideo", "true")
+//        )
 
-        sdpMediaConstraints.optional.add(KeyValuePair("DtlsSrtpKeyAgreement", "true"))
+//        sdpMediaConstraints.optional.add(KeyValuePair("DtlsSrtpKeyAgreement", "true"))
 //        sdpMediaConstraints.optional.add(KeyValuePair("internalSctpDataChannels", "true"))
         peerConnection?.createAnswer(
                 object : SdpObserver {
@@ -235,7 +263,7 @@ class WebRtcActivity : AppCompatActivity() {
     }
 
     private fun sendMessage(message: JSONObject) {
-        val contactTo = SPUtils.get(this, "contactTo", "contactUserName") as String
+        val contactTo = SPUtils[this, "contactTo", "contactUserName"] as String
         message.put("contactTo", contactTo)
         SocketIOHolder.send(message)
     }
@@ -273,15 +301,15 @@ class WebRtcActivity : AppCompatActivity() {
 
     private fun createVideoTrackFromCameraAndShowIt() {
 
-        val videoCapture: VideoCapturer? = createVideoCapturer()
+        videoCapture = createVideoCapturer()
         // Create video source
-        val surfaceTextureHelper = SurfaceTextureHelper.create(
+        surfaceTextureHelper = SurfaceTextureHelper.create(
                 "CaptureThread",
                 rootEglBase?.eglBaseContext
         )
         videoSource = factory!!.createVideoSource(videoCapture!!.isScreencast)
-        videoCapture.initialize(surfaceTextureHelper, this, videoSource!!.capturerObserver)
-        videoCapture.startCapture(1280, 720, 30)
+        videoCapture?.initialize(surfaceTextureHelper, this, videoSource!!.capturerObserver)
+        videoCapture?.startCapture(1280, 720, 30)
 
         // Create audio source
         audioSource = factory!!.createAudioSource(MediaConstraints())
