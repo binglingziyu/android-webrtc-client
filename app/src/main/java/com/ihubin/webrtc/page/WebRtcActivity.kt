@@ -24,6 +24,8 @@ class WebRtcActivity : AppCompatActivity() {
     companion object {
         const val TAG = "WebRtcActivity"
     }
+
+    var started: Boolean = false
     
     var surfaceView: SurfaceViewRenderer? = null
     var surfaceView2: SurfaceViewRenderer? = null
@@ -64,16 +66,24 @@ class WebRtcActivity : AppCompatActivity() {
                 init.negotiated = false
                 dataChannel = peerConnection?.createDataChannel("dataChannel", init)
                 dataChannel?.registerObserver(object : DataChannel.Observer {
-                    override fun onBufferedAmountChange(p0: Long) {}
+                    override fun onBufferedAmountChange(p0: Long) {
+                        Log.d(TAG, "########## onBufferedAmountChange: $p0")
+                    }
 
-                    override fun onStateChange() {}
+                    override fun onStateChange() {
+                        Log.d(TAG, "########## onStateChange" + dataChannel?.state())
+                    }
 
                     override fun onMessage(buffer: DataChannel.Buffer?) {
                         Log.d(TAG, "********** 接收到消息 ***********")
                         val data = buffer!!.data
                         val bytes = ByteArray(data.capacity())
+                        data.get(bytes)
+                        //data[bytes]
                         val strData = String(bytes)
-                        Toast.makeText(this@WebRtcActivity, strData, Toast.LENGTH_SHORT).show()
+                        runOnUiThread {
+                           Toast.makeText(this@WebRtcActivity, strData, Toast.LENGTH_SHORT).show()
+                        }
                     }
                 })
 
@@ -84,12 +94,12 @@ class WebRtcActivity : AppCompatActivity() {
     }
 
     fun sendDataChannelMessage(message: String, dataChannel: DataChannel) {
+        Log.d(TAG, "sendDataChannelMessage: ${dataChannel.state()}")
         val msg = message.toByteArray()
         val buffer = DataChannel.Buffer(
                 ByteBuffer.wrap(msg), false)
         val sendResult = dataChannel.send(buffer)
-
-        Toast.makeText(this@WebRtcActivity, "发送结果：$sendResult", Toast.LENGTH_SHORT).show()
+        //Toast.makeText(this@WebRtcActivity, "发送结果：$sendResult", Toast.LENGTH_SHORT).show()
     }
 
     private fun start() {
@@ -110,11 +120,11 @@ class WebRtcActivity : AppCompatActivity() {
                 }
             } else {
                 val message = args[0] as JSONObject
-                Log.d(TAG, "connectToSignallingServer: got message $message")
+//                Log.d(TAG, "connectToSignallingServer: got message $message")
                 if (message.getString("type") == "offer") {
                     Log.d(TAG, "connectToSignallingServer: received an offer")
 
-                    peerConnection!!.setRemoteDescription(
+                    peerConnection?.setRemoteDescription(
                             object : SdpObserver {
                                 override fun onCreateSuccess(p0: SessionDescription?) {}
                                 override fun onSetSuccess() {}
@@ -125,7 +135,7 @@ class WebRtcActivity : AppCompatActivity() {
                     )
                     doAnswer()
                 } else if (message.getString("type") == "answer") {
-                    peerConnection!!.setRemoteDescription(
+                    peerConnection?.setRemoteDescription(
                             object : SdpObserver {
                                 override fun onCreateSuccess(p0: SessionDescription?) {}
                                 override fun onSetSuccess() {}
@@ -141,13 +151,14 @@ class WebRtcActivity : AppCompatActivity() {
                             message.getInt("label"),
                             message.getString("candidate")
                     )
-                    peerConnection!!.addIceCandidate(candidate)
+                    peerConnection?.addIceCandidate(candidate)
                 }
             }
         }
     }
 
     private fun doCall() {
+        started = true
         val sdpMediaConstraints = MediaConstraints()
         sdpMediaConstraints.mandatory.add(
                 KeyValuePair("OfferToReceiveAudio", "true")
@@ -157,11 +168,11 @@ class WebRtcActivity : AppCompatActivity() {
         )
 
         sdpMediaConstraints.optional.add(KeyValuePair("DtlsSrtpKeyAgreement", "true"))
-        sdpMediaConstraints.optional.add(KeyValuePair("internalSctpDataChannels", "true"))
-        peerConnection!!.createOffer(object : SdpObserver {
+//        sdpMediaConstraints.optional.add(KeyValuePair("internalSctpDataChannels", "true"))
+        peerConnection?.createOffer(object : SdpObserver {
             override fun onCreateSuccess(sessionDescription: SessionDescription?) {
                 Log.d(TAG, "onCreateSuccess: ")
-                peerConnection!!.setLocalDescription(
+                peerConnection?.setLocalDescription(
                         object : SdpObserver {
                             override fun onCreateSuccess(p0: SessionDescription?) {}
                             override fun onSetSuccess() {}
@@ -196,11 +207,11 @@ class WebRtcActivity : AppCompatActivity() {
         )
 
         sdpMediaConstraints.optional.add(KeyValuePair("DtlsSrtpKeyAgreement", "true"))
-        sdpMediaConstraints.optional.add(KeyValuePair("internalSctpDataChannels", "true"))
-        peerConnection!!.createAnswer(
+//        sdpMediaConstraints.optional.add(KeyValuePair("internalSctpDataChannels", "true"))
+        peerConnection?.createAnswer(
                 object : SdpObserver {
                     override fun onCreateSuccess(sessionDescription: SessionDescription?) {
-                        peerConnection!!.setLocalDescription(object : SdpObserver {
+                        peerConnection?.setLocalDescription(object : SdpObserver {
                             override fun onCreateSuccess(p0: SessionDescription?) {}
                             override fun onSetSuccess() {}
                             override fun onCreateFailure(p0: String?) {}
@@ -337,14 +348,19 @@ class WebRtcActivity : AppCompatActivity() {
                         Log.d(TAG, "********** 接收到消息 ***********")
                         val data = buffer!!.data
                         val bytes = ByteArray(data.capacity())
+//                        data.get(bytes)
+                        data[bytes]
                         val strData = String(bytes)
-                        Toast.makeText(this@WebRtcActivity, strData, Toast.LENGTH_SHORT).show()
+                        runOnUiThread {
+                            Toast.makeText(this@WebRtcActivity, strData, Toast.LENGTH_SHORT).show()
+                        }
                     }
                 })
             }
 
             override fun onRenegotiationNeeded() {
                 Log.d(TAG, "onRenegotiationNeeded: ")
+                if(started) doCall()
             }
 
             override fun onAddTrack(receiver: RtpReceiver?, mediaStreams: Array<out MediaStream>?) {
@@ -384,6 +400,8 @@ class WebRtcActivity : AppCompatActivity() {
         // Enable DTLS for normal calls and disable for loopback calls.
         rtcConfig.enableDtlsSrtp = true
         rtcConfig.sdpSemantics = SdpSemantics.UNIFIED_PLAN
+
+//        rtcConfig.enableRtpDataChannel = true
 
         return factory.createPeerConnection(rtcConfig, pcObserver)
     }
