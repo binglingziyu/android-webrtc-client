@@ -8,7 +8,6 @@
 
     <Button
         android:id="@+id/shared_preferences"
-        android:onClick="sharedPreferences"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="12dp"
@@ -20,7 +19,6 @@
 
     <Button
         android:id="@+id/logout"
-        android:onClick="logout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="12dp"

@@ -2,37 +2,36 @@ package com.ihubin.webrtc.page
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.ihubin.webrtc.R
+import com.ihubin.webrtc.databinding.ActivityLoginBinding
 import com.ihubin.webrtc.util.SPUtils
 
 class LoginActivity : AppCompatActivity() {
 
-    private var nameInput: EditText? = null
+    lateinit var binding: ActivityLoginBinding
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         title = "登录"
-        setContentView(R.layout.activity_login)
+        binding = ActivityLoginBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        nameInput = findViewById(R.id.name_input)
-
+        initView()
     }
 
-    fun login(view: View) {
-        if(nameInput?.text == null || nameInput?.text?.length == 0) {
-            Toast.makeText(this, "填写用户名", Toast.LENGTH_SHORT).show()
-            return
+    private fun initView() {
+        binding.loginBtn.setOnClickListener {
+            if(binding.nameInput.text == null || binding.nameInput.text.isEmpty()) {
+                Toast.makeText(this, "填写用户名", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            SPUtils.put(this, "login", binding.nameInput.text)
+
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
         }
-
-
-        SPUtils.put(this, "login", nameInput?.text!!)
-
-        startActivity(Intent(this, MainActivity::class.java))
-        finish()
     }
 
 

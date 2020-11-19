@@ -6,6 +6,7 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.ihubin.webrtc.R
+import com.ihubin.webrtc.databinding.ActivityStartWebrtcBinding
 import com.ihubin.webrtc.socketio.SocketIOHolder
 import com.ihubin.webrtc.util.SPUtils
 import io.socket.client.Socket
@@ -25,10 +26,9 @@ class WebRtcActivity : AppCompatActivity() {
         const val TAG = "WebRtcActivity"
     }
 
+    lateinit var binding: ActivityStartWebrtcBinding
+
     var started: Boolean = false
-    
-    var surfaceView: SurfaceViewRenderer? = null
-    var surfaceView2: SurfaceViewRenderer? = null
 
     private var rootEglBase: EglBase? = null
     private var factory: PeerConnectionFactory? = null
@@ -41,7 +41,8 @@ class WebRtcActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_start_webrtc)
+        binding = ActivityStartWebrtcBinding.inflate(layoutInflater)
+        setContentView(binding.root)
         initView()
         start()
     }
@@ -57,10 +58,8 @@ class WebRtcActivity : AppCompatActivity() {
         audioSource?.dispose()
         audioSource = null
 
-        surfaceView?.release()
-        surfaceView = null
-        surfaceView2?.release()
-        surfaceView2 = null
+        binding.surfaceView.release()
+        binding.surfaceView2.release()
         rootEglBase?.releaseSurface()
         rootEglBase?.release()
         rootEglBase = null
@@ -82,12 +81,10 @@ class WebRtcActivity : AppCompatActivity() {
     }
 
     private fun initView() {
-        surfaceView = findViewById(R.id.surface_view)
-        surfaceView2 = findViewById(R.id.surface_view2)
-        findViewById<Button>(R.id.start_call).setOnClickListener {
+        binding.startCall.setOnClickListener {
             doCall()
         }
-        findViewById<Button>(R.id.start_channel).setOnClickListener {
+        binding.startChannel.setOnClickListener {
             if(dataChannel == null) {
                 val init = DataChannel.Init();
                 init.ordered = true
@@ -270,13 +267,13 @@ class WebRtcActivity : AppCompatActivity() {
 
     private fun initializeSurfaceViews() {
         rootEglBase = EglBase.create()
-        surfaceView?.init(rootEglBase?.eglBaseContext, null)
-        surfaceView?.setEnableHardwareScaler(true)
-        surfaceView?.setMirror(true)
+        binding.surfaceView.init(rootEglBase?.eglBaseContext, null)
+        binding.surfaceView.setEnableHardwareScaler(true)
+        binding.surfaceView.setMirror(true)
 
-        surfaceView2?.init(rootEglBase?.eglBaseContext, null)
-        surfaceView2?.setEnableHardwareScaler(true)
-        surfaceView2?.setMirror(true)
+        binding.surfaceView2.init(rootEglBase?.eglBaseContext, null)
+        binding.surfaceView2.setEnableHardwareScaler(true)
+        binding.surfaceView2.setMirror(true)
     }
 
     private fun initializePeerConnectionFactory() {
@@ -398,7 +395,7 @@ class WebRtcActivity : AppCompatActivity() {
                 if(receiver.track() is VideoTrack) {
                     val remoteVideoTrack: VideoTrack = receiver.track() as VideoTrack
                     remoteVideoTrack.setEnabled(true)
-                    remoteVideoTrack.addSink(surfaceView2)
+                    remoteVideoTrack.addSink(binding.surfaceView2)
                 } else if(receiver.track() is AudioTrack) {
                     val remoteAudioTrack = receiver.track() as AudioTrack
                     remoteAudioTrack.setEnabled(true)
@@ -442,7 +439,7 @@ class WebRtcActivity : AppCompatActivity() {
         // Create video track
         val videoTrack: VideoTrack = factory!!.createVideoTrack(VIDEO_TRACK_ID, videoSource)
         videoTrack.setEnabled(true)
-        videoTrack.addSink(surfaceView)
+        videoTrack.addSink(binding.surfaceView)
 
         // Create audio track
         val audioTrack: AudioTrack = factory!!.createAudioTrack(AUDIO_TRACK_ID, audioSource)

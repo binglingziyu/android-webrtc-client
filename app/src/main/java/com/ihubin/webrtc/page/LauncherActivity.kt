@@ -3,15 +3,18 @@ package com.ihubin.webrtc.page
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import com.ihubin.webrtc.R
+import com.ihubin.webrtc.databinding.ActivityLauncherBinding
 import com.ihubin.webrtc.util.SPUtils
 
 class LauncherActivity : AppCompatActivity() {
 
+    lateinit var binding: ActivityLauncherBinding
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         supportActionBar?.hide()
-        setContentView(R.layout.activity_launcher)
+        binding = ActivityLauncherBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
         val thread = Thread {
             Thread.sleep(1500)

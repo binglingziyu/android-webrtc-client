@@ -7,6 +7,7 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.ihubin.webrtc.R
+import com.ihubin.webrtc.databinding.RvItemOnlineUserBinding
 import com.ihubin.webrtc.util.SPUtils
 
 class OnlineUserAdapter(onlineUserList: List<String>, onContact: View.OnClickListener) : RecyclerView.Adapter<OnlineUserAdapter.ViewHolder>() {
@@ -18,8 +19,8 @@ class OnlineUserAdapter(onlineUserList: List<String>, onContact: View.OnClickLis
         parent: ViewGroup,
         viewType: Int
     ): ViewHolder {
-        val root = LayoutInflater.from(parent.context).inflate(R.layout.rv_item_online_user, parent, false)
-        return ViewHolder(root)
+        val binding = RvItemOnlineUserBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return ViewHolder(binding)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -39,9 +40,9 @@ class OnlineUserAdapter(onlineUserList: List<String>, onContact: View.OnClickLis
         return userList.size
     }
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        var userName: TextView = itemView.findViewById(R.id.user_name)
-        var contact: Button = itemView.findViewById(R.id.contact)
+    class ViewHolder(binding: RvItemOnlineUserBinding) : RecyclerView.ViewHolder(binding.root) {
+        var userName: TextView = binding.userName
+        var contact: Button = binding.contact
     }
 
 }
